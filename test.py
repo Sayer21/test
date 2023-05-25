@@ -25,13 +25,7 @@ parser.add_argument('--frame-skip', default=1, type=int, help='number of frames 
 parser.add_argument('--seed', default=1, type=int, help='seed')
 args = parser.parse_args()
 
-at_detector = Detector(families='tag36h11',
-                            nthreads=1,
-                            quad_decimate=1.0,
-                            quad_sigma=0.0,
-                            refine_edges=1,
-                            decode_sharpening=0.25,
-                            debug=0)
+
 
 # Parametros para el detector de patos
 filtro_1 = np.array([0, 0, 0]) 
@@ -161,6 +155,23 @@ def get_line(converted, filter_1, filter_2, line_color):
     # y viceversa.
     return angle
 
+def apriltag(img):
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        at_detector = Detector(families='tag36h11',
+                            nthreads=1,
+                            quad_decimate=1.0,
+                            quad_sigma=0.0,
+                            refine_edges=1,
+                            decode_sharpening=0.25,
+                            debug=0)
+        
+        tags = at_detector.detect(gray, estimate_tag_pose=False, camera_params=None, tag_size=None)
+        for tag in tags:
+            corners=tag.corners
+            cv2.polylines(img, [corners.astype(int)], True, (0, 0, 255), 2)
+        cv2.imshow("aaaaa",img)
+
 
 
 key_handler = key.KeyStateHandler()
@@ -175,7 +186,6 @@ def update(dt):
     # Aquí se controla el duckiebot
     global action 
     #action = np.array([0.0, 0.0])
-
 
     if key_handler[key.UP]:
         action[0]+=0.44
@@ -197,25 +207,7 @@ def update(dt):
     obs, reward, done, info = env.step(action)
     print('step_count = %s, reward=%.3f' % (env.unwrapped.step_count, reward))
     img=cv2.cvtColor(obs, cv2.COLOR_RGB2BGR)
-
-    def apriltag(img):
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        tags = at_detector.detect(gray, estimate_tag_pose=False, camera_params=None, tag_size=None)
-        for tag in tags:
-            corners=tag.corners
-            cv2.polylines(img, [corners.astype(int)], True, (0, 0, 255), 2)
-        cv2.imshow("aaaaa",img)
-        
-
     apriltag(img)
-
-
-
-
-
-
-
-
     converted = cv2.cvtColor(obs, cv2.COLOR_RGB2HSV)
     converted=recorte(converted)
     xd=red_line_detection(converted)
@@ -237,10 +229,6 @@ def update(dt):
         #action[1]+=1
     else:
         action[1]=0.0
-
- 
-
-
 
     if done:
         print('done!')
